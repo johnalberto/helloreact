@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Navbar from "@/components/Navbar";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -23,12 +24,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+    <html lang="es">
+      <body>
+        {/* 2. Poner el Navbar AQUÍ, antes del contenido */}
+        <Navbar />
+        
+        {/* 'children' representa la página actual (Home, About, etc.) */}
+        <main className="container mx-auto p-4">
+          {children}
+        </main>
+        
       </body>
     </html>
   );
 }
+
