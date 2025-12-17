@@ -11,8 +11,16 @@ interface TaskData {
   priority: string;
 }
 
+type State = {
+  status: 'success' | 'error' | null;
+  message: string | null;
+};
+
 export default function EditForm({ task }: { task: TaskData }) {
-  const initialState = { message: "", status: "" };
+
+
+  const initialState: State = { message: null, status: null };
+  
   const [state, dispatch, isPending] = useActionState(updateTask, initialState);
 
   return (
