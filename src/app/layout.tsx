@@ -25,11 +25,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body>
-        {/* 2. Poner el Navbar AQUÍ, antes del contenido */}
+      {/* CAMBIOS REALIZADOS:
+         1. Agregué las variables de fuente al className.
+         2. Agregué 'antialiased' para suavizado de texto.
+      */}
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        
         <Navbar />
         
-        {/* 'children' representa la página actual (Home, About, etc.) */}
         <main className="container mx-auto p-4">
           {children}
         </main>
@@ -38,4 +41,3 @@ export default function RootLayout({
     </html>
   );
 }
-

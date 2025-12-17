@@ -1,4 +1,4 @@
-import Contador from "@/components/Contador";
+import Contador from "@/components/Counter";
 import Link from "next/link"; // <--- Importar esto
 
 

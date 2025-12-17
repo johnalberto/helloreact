@@ -1,8 +1,8 @@
 'use client'; // 1. OBLIGATORIO: Ahora usamos hooks (useRef)
 
-import { useFormState } from 'react-dom'; // 👈 El hook mágico
+import { useActionState } from "react"; // 👈 El hook mágico
 import { useRef, useEffect } from 'react';
-import { createTask } from '@/actions/actions'; // Importamos la función del servidor
+import { createTask } from '@/actions/task-actions'; // Importamos la función del servidor
 import SubmitButton from '@/components/SubmitButton';
 
 // Definimos el estado inicial (antes de enviar nada)
@@ -15,7 +15,7 @@ export function AddTaskForm() {
   // CONFIGURACIÓN DEL HOOK:
   // [state]: Contiene lo que devolvió el servidor (mensaje y status)
   // [dispatch]: Es la nueva función que usaremos en el 'action' del form
-  const [state, dispatch] = useFormState(createTask, initialState);
+  const [state, dispatch, isPending] = useActionState(createTask, initialState);
   
   const ref = useRef<HTMLFormElement>(null);
 
@@ -55,7 +55,7 @@ export function AddTaskForm() {
             </select>
           </div>
 
-          <SubmitButton />
+          <SubmitButton label="Crear Juanchito" loadingLabel="Paila papi" />
         </div>
 
         {/* MOSTRAR EL MENSAJE DEL SERVIDOR */}

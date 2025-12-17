@@ -1,0 +1,20 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Task {
+  id        Int      @id @default(autoincrement()) // Primary Key Identity(1,1)
+  title     String
+  priority  String   // Podríamos usar Enums, pero String está bien por ahora
+  isCompleted Boolean @default(false) // 👈 Campo Nuevo (False por defecto)
+  createdAt DateTime @default(now()) // GetDate()
+  updatedAt DateTime @updatedAt
+}
