@@ -29,7 +29,7 @@ export default function UserForm() {
           required
         />
 
-        <SubmitButton />
+        <SubmitButton label="Guardar usuario" />
         
       </form>
     </div>
