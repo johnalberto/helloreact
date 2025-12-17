@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma'; // 👈 Importamos tu instancia singleton
 import { redirect } from 'next/navigation';
+import { auth } from "@clerk/nextjs/server";
 
 export type State = {
   status: 'success' | 'error' | null;
@@ -11,6 +12,13 @@ export type State = {
 
 export async function createTask(prevState: State, formData: FormData): Promise<State> {
   // 1. Validaciones (igual que antes)
+  // 👇 2. OBTENER USUARIO ACTUAL
+  const { userId } = await auth();
+
+  if (!userId) {
+    return { status: "error", message: "❌ Debes iniciar sesión." };
+  }
+
   const title = formData.get('title')?.toString().trim();
   const priority = formData.get('priority')?.toString();
 
@@ -24,6 +32,7 @@ export async function createTask(prevState: State, formData: FormData): Promise<
       data: {
         title: title,
         priority: priority || 'Media', // Valor por defecto si falla
+        userId: userId, // 👈 3. GUARDAMOS EL ID AQUÍ
       },
     });
 

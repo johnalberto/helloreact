@@ -17,4 +17,5 @@ model Task {
   isCompleted Boolean @default(false) // 👈 Campo Nuevo (False por defecto)
   createdAt DateTime @default(now()) // GetDate()
   updatedAt DateTime @updatedAt
+  userId      String   @default("user_demo") // Valor por defecto temporal para no romper tareas viejas
 }
