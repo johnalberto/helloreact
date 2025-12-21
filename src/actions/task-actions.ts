@@ -94,6 +94,13 @@ export async function updateTask(prevState: State, formData: FormData): Promise<
   const id = formData.get("id")?.toString();
   const title = formData.get("title")?.toString().trim();
   const priority = formData.get("priority")?.toString();
+  const { userId } = await auth();
+
+  // Si no hay usuario, cancelamos todo
+  if (!userId) {
+    return { status: "error", message: "❌ Debes iniciar sesión." };
+  }
+
 
   if (!id) {
     return { status: "error", message: "❌ ID de tarea no encontrado." };
@@ -104,22 +111,29 @@ export async function updateTask(prevState: State, formData: FormData): Promise<
   }
 
   try {
-    // 2. Actualizamos en Prisma
+   // Convertir el ID a número (porque Prisma espera un Int)
+    const taskId = parseInt(id);
+
     await prisma.task.update({
-      where: { id: parseInt(id) }, // Convertimos ID a número
+      where: { 
+        id: taskId,
+        userId: userId // 🔒 AHORA SÍ: Ya sabe qué variable es
+      },
       data: {
         title: title,
         priority: priority || "Media",
       },
     });
 
-    // 3. Revalidamos la lista principal
     revalidatePath("/task");
+    revalidatePath(`/task/${taskId}/edit`); // Actualiza el formulario también
+    
+    return { status: "success", message: "¡Tarea actualizada correctamente! 📝" };
 
   } catch (error) {
     return { status: "error", message: "❌ Error al actualizar la tarea." };
   }
 
   // 4. Redirigimos al usuario a la lista (FUERA del try/catch para evitar conflictos)
-  redirect("/task");
+
 }
