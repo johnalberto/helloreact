@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { auth } from "@clerk/nextjs/server";
 import EditForm from "./EditForm"; // 👈 Importamos el componente cliente
 
 interface Props {
@@ -12,15 +13,31 @@ export default async function EditTaskPage({ params }: Props) {
   // 1. Recuperar ID (Promesa)
   const { id } = await params;
   const taskId = parseInt(id);
+  const { userId } = await auth();
+  if (!userId) redirect("/");
 
   if (isNaN(taskId)) redirect("/task");
 
   // 2. Buscar Datos en BD
   const task = await prisma.task.findUnique({
-    where: { id: taskId },
+    where: { 
+      id: parseInt(id),
+      userId: userId, // Seguridad: solo si es mía
+    },
   });
 
   if (!task) redirect("/task");
+
+  // 👇 2. NUEVO: Buscar las categorías (Mías o Globales)
+  // (Copia exacta de lo que hicimos en la página principal)
+  const categories = await prisma.category.findMany({
+    where: {
+      OR: [
+        { userId: userId }, 
+        { userId: null },   
+      ]
+    }
+  });
 
   // 3. Renderizar (Pasamos los datos al componente Cliente)
   return (
@@ -30,7 +47,7 @@ export default async function EditTaskPage({ params }: Props) {
       </h1>
       
       {/* Aquí vive el formulario interactivo 👇 */}
-      <EditForm task={task} />
+      <EditForm task={task} categories={categories} />
     </div>
   );
 }

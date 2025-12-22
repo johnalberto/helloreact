@@ -18,4 +18,19 @@ model Task {
   createdAt DateTime @default(now()) // GetDate()
   updatedAt DateTime @updatedAt
   userId      String   @default("user_demo") // Valor por defecto temporal para no romper tareas viejas
+  // 👇 1. NUEVO: Relación con Categoría
+  // Esto crea la columna "categoryId" en la tabla Task (la Clave Foránea)
+  categoryId  Int?     // El ? significa que es opcional (por si tienes tareas viejas sin categoría)
+  category    Category? @relation(fields: [categoryId], references: [id])
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String
+  color     String   @default("#000000")
+  
+  // 👇 CAMBIO: Agregamos '?' para que pueda ser nulo (Global)
+  userId    String?  
+  
+  tasks     Task[]
 }

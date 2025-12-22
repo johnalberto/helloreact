@@ -1,14 +1,21 @@
-"use client"; // 👈 Obligatorio para usar useActionState
+"use client"; 
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react"; // 👈 Agregamos useEffect
 import { updateTask } from "@/actions/task-actions";
 import Link from "next/link";
+import { Category } from "@prisma/client";
+import { toast } from "sonner"; // 👈 Importamos toast
 
-// Definimos qué datos necesita este formulario para pre-llenarse
 interface TaskData {
   id: number;
   title: string;
   priority: string;
+  categoryId: number | null;
+}
+
+interface Props {
+    task: TaskData;
+    categories: Category[];
 }
 
 type State = {
@@ -16,18 +23,26 @@ type State = {
   message: string | null;
 };
 
-export default function EditForm({ task }: { task: TaskData }) {
-
+export default function EditForm({ task, categories }: Props) {
 
   const initialState: State = { message: null, status: null };
   
   const [state, dispatch, isPending] = useActionState(updateTask, initialState);
 
+  // 👇 1. EFECTO: Escuchar cambios para mostrar la notificación
+  useEffect(() => {
+    if (state?.status === 'success') {
+      toast.success(state.message);
+    } else if (state?.status === 'error') {
+      toast.error(state.message);
+    }
+  }, [state]);
+
   return (
     <form action={dispatch} className="flex flex-col gap-5">
-      {/* Input Oculto para enviar el ID a la Server Action */}
       <input type="hidden" name="id" value={task.id} />
 
+      {/* Título */}
       <div>
         <label className="block text-sm font-semibold text-gray-700 mb-1">Título</label>
         <input
@@ -38,6 +53,7 @@ export default function EditForm({ task }: { task: TaskData }) {
         />
       </div>
 
+      {/* Prioridad */}
       <div>
         <label className="block text-sm font-semibold text-gray-700 mb-1">Prioridad</label>
         <select
@@ -51,11 +67,25 @@ export default function EditForm({ task }: { task: TaskData }) {
         </select>
       </div>
 
-      {/* Mensaje de Error (si falla la actualización) */}
-      {state?.status === "error" && (
-        <p className="text-red-500 text-sm font-medium">{state.message}</p>
-      )}
+      {/* 👇 2. NUEVO: Selector de Categoría */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-1">Categoría</label>
+        <select
+          name="categoryId"
+          // Si tiene categoría la pone, si es null pone "" (Sin categoría)
+          defaultValue={task.categoryId || ""} 
+          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+        >
+          <option value="">Sin categoría</option>
+          {categories.map((cat) => (
+            <option key={cat.id} value={cat.id}>
+              {cat.name}
+            </option>
+          ))}
+        </select>
+      </div>
 
+      {/* Botones */}
       <div className="flex gap-3 mt-4 pt-2">
         <Link
           href="/task"

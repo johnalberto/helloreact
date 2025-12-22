@@ -5,6 +5,8 @@ import { prisma } from '@/lib/prisma'; // 👈 Importamos tu instancia singleton
 import { redirect } from 'next/navigation';
 import { auth } from "@clerk/nextjs/server";
 
+
+
 export type State = {
   status: 'success' | 'error' | null;
   message: string | null;
@@ -21,6 +23,9 @@ export async function createTask(prevState: State, formData: FormData): Promise<
 
   const title = formData.get('title')?.toString().trim();
   const priority = formData.get('priority')?.toString();
+  // 👇 1. LEER EL ID DE LA CATEGORÍA
+  const categoryId = formData.get("categoryId")?.toString();
+
 
   if (!title || title.length < 3) {
     return { status: 'error', message: '❌ El título debe tener mín. 3 letras.' };
@@ -33,6 +38,8 @@ export async function createTask(prevState: State, formData: FormData): Promise<
         title: title,
         priority: priority || 'Media', // Valor por defecto si falla
         userId: userId, // 👈 3. GUARDAMOS EL ID AQUÍ
+        // 👇 2. GUARDARLO (Si existe, lo convertimos a número. Si no, null)
+        categoryId: categoryId ? parseInt(categoryId) : null,
       },
     });
 
@@ -94,13 +101,14 @@ export async function updateTask(prevState: State, formData: FormData): Promise<
   const id = formData.get("id")?.toString();
   const title = formData.get("title")?.toString().trim();
   const priority = formData.get("priority")?.toString();
+  const categoryId = formData.get("categoryId")?.toString();
+
   const { userId } = await auth();
 
   // Si no hay usuario, cancelamos todo
   if (!userId) {
     return { status: "error", message: "❌ Debes iniciar sesión." };
   }
-
 
   if (!id) {
     return { status: "error", message: "❌ ID de tarea no encontrado." };
@@ -122,6 +130,7 @@ export async function updateTask(prevState: State, formData: FormData): Promise<
       data: {
         title: title,
         priority: priority || "Media",
+        categoryId: categoryId ? parseInt(categoryId) : null,
       },
     });
 
@@ -134,6 +143,5 @@ export async function updateTask(prevState: State, formData: FormData): Promise<
     return { status: "error", message: "❌ Error al actualizar la tarea." };
   }
 
-  // 4. Redirigimos al usuario a la lista (FUERA del try/catch para evitar conflictos)
 
 }
