@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   DndContext,
   closestCenter,
@@ -18,12 +18,12 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Task, Category } from "@prisma/client"; // Tipos de Prisma
+import { Task, Category } from "@prisma/client";
 import Link from "next/link";
 import TaskCheckbox from "./TaskCheckbox";
 import DeleteButton from "./DeleteButton";
+import { updateTaskOrder } from "@/actions/task-actions"; // ✅ Importamos la acción
 
-// 1. Extendemos el tipo Task para incluir la categoría (que viene del include)
 type TaskWithCategory = Task & { category: Category | null };
 
 interface Props {
@@ -44,7 +44,7 @@ function SortableItem({ task }: { task: TaskWithCategory }) {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1, // Se hace transparente al arrastrar
+    opacity: isDragging ? 0.5 : 1,
     position: "relative" as const,
     zIndex: isDragging ? 999 : "auto",
   };
@@ -54,12 +54,11 @@ function SortableItem({ task }: { task: TaskWithCategory }) {
       ref={setNodeRef}
       style={style}
       {...attributes}
-      // 👇 El "handle" (de donde se agarra) se lo ponemos a todo el li, o a un icono específico
-      {...listeners} 
+      {...listeners}
       className={`p-4 border rounded-lg shadow-sm flex justify-between items-center bg-white border-gray-200 touch-none mb-3`}
     >
       <div className="flex items-center gap-4">
-        {/* Checkbox (Lo aislamos del drag para que se pueda clickear) */}
+        {/* Aislamos eventos para que el checkbox funcione */}
         <div onPointerDown={(e) => e.stopPropagation()}>
              <TaskCheckbox taskId={task.id} isCompleted={task.isCompleted} />
         </div>
@@ -85,23 +84,27 @@ function SortableItem({ task }: { task: TaskWithCategory }) {
       </div>
 
       <div className="flex items-center gap-3">
-         {/* Botones (Aislados del drag) */}
+         {/* Aislamos eventos para que los botones funcionen */}
          <div onPointerDown={(e) => e.stopPropagation()} className="flex gap-2">
             <Link href={`/task/${task.id}/edit`} className="text-sm text-indigo-600 hover:underline">
                 Editar
             </Link>
             <DeleteButton taskId={task.id} />
          </div>
-         {/* Icono de Drag (Visual) */}
          <span className="text-gray-300 cursor-grab text-xl">≡</span>
       </div>
     </li>
   );
 }
 
-// 👇 COMPONENTE PRINCIPAL DE LA LISTA
+// 👇 COMPONENTE PRINCIPAL
 export default function TaskList({ initialTasks }: Props) {
   const [tasks, setTasks] = useState(initialTasks);
+
+  // Sincronizar estado si las props cambian (útil al filtrar/recargar)
+  useEffect(() => {
+    setTasks(initialTasks);
+  }, [initialTasks]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -110,21 +113,28 @@ export default function TaskList({ initialTasks }: Props) {
     })
   );
 
-  // Función que se ejecuta al soltar
-  const handleDragEnd = (event: DragEndEvent) => {
+  // 👇 LÓGICA DE REORDENAMIENTO
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (active.id !== over?.id) {
-      setTasks((items) => {
-        const oldIndex = items.findIndex((t) => t.id === active.id);
-        const newIndex = items.findIndex((t) => t.id === over?.id);
-        
-        // Reordenamos el array visualmente
-        return arrayMove(items, oldIndex, newIndex);
-      });
+      // 1. Buscamos los índices en el estado actual
+      const oldIndex = tasks.findIndex((t) => t.id === active.id);
+      const newIndex = tasks.findIndex((t) => t.id === over?.id);
       
-      // 🚧 AQUÍ FALTA GUARDAR EN BASE DE DATOS (Lo haremos en el siguiente paso)
-      console.log("¡Movido! Nuevo orden pendiente de guardar.");
+      // 2. Calculamos el nuevo array ordenado
+      const newOrder = arrayMove(tasks, oldIndex, newIndex);
+      
+      // 3. Actualizamos la vista inmediatamente (Optimistic UI)
+      setTasks(newOrder);
+      
+      // 4. Guardamos en la Base de Datos
+      try {
+          await updateTaskOrder(newOrder);
+          console.log("✅ Orden guardado en BD");
+      } catch (error) {
+          console.error("❌ Error guardando orden", error);
+      }
     }
   };
 

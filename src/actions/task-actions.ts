@@ -145,3 +145,38 @@ export async function updateTask(prevState: State, formData: FormData): Promise<
 
 
 }
+
+// ... tus otros imports ...
+
+export async function updateTaskOrder(items: { id: number }[]) {
+  const { userId } = await auth();
+
+  if (!userId) {
+    return { status: "error", message: "No autorizado" };
+  }
+
+  try {
+    // Iniciamos una "Transacción": O se guardan todos, o no se guarda ninguno.
+    const updates = items.map((task, index) => 
+      prisma.task.update({
+        where: { 
+          id: task.id,
+          userId: userId // 🔒 Seguridad: Solo actualizamos si la tarea es mía
+        },
+        data: { 
+          order: index // Guardamos la posición (0, 1, 2...)
+        }
+      })
+    );
+
+    await prisma.$transaction(updates);
+
+    // No hacemos revalidatePath aquí para evitar parpadeos, 
+    // confiamos en la actualización visual inmediata (Optimistic UI)
+    return { status: "success", message: "Orden actualizado" };
+
+  } catch (error) {
+    console.error("Error reordenando:", error);
+    return { status: "error", message: "Error al guardar el orden" };
+  }
+}
